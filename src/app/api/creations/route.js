@@ -34,6 +34,11 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    const key = req.headers.get("x-mu-api-key") || req.headers.get("x-api-key") || null;
+    if (!key) {
+      return new NextResponse("MUAPI key missing. Please add your key in Settings.", { status: 400 });
+    }
+
     const { maleImage, femaleImage, stitchedImage, prompt, modelId, aspectRatio, duration, resolution } = await req.json();
 
     if (!maleImage || !femaleImage || !stitchedImage) {
@@ -46,16 +51,19 @@ export async function POST(req) {
       return new NextResponse("Missing modelId", { status: 400 });
     }
 
-    const creation = await AIService.generate({
-      maleImage,
-      femaleImage,
-      stitchedImage,
-      prompt,
-      modelId,
-      aspectRatio: aspectRatio || "16:9",
-      duration,
-      resolution,
-    });
+    const creation = await AIService.generate(
+      {
+        maleImage,
+        femaleImage,
+        stitchedImage,
+        prompt,
+        modelId,
+        aspectRatio: aspectRatio || "16:9",
+        duration,
+        resolution,
+      },
+      key
+    );
 
     return NextResponse.json(creation);
   } catch (error) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { IoClose, IoMenu } from "react-icons/io5";
 import config from "@/lib/config";
@@ -16,7 +16,7 @@ export default function Navbar() {
   const navLinks = [
     { name: "Workspace", path: "/" },
     { name: "Gallery", path: "/gallery" },
-    { name: "Pricing", path: "/pricing" },
+    { name: "Settings", path: "/settings" },
   ];
 
   return (
@@ -51,17 +51,6 @@ export default function Navbar() {
           })}
         </nav>
 
-        <div className="hidden md:block">
-          <a
-            href="https://app.netlify.com/start/deploy?repository=https://github.com/your-username/your-repo"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-full border border-divider px-4 py-1.5 text-xs font-bold text-secondary-text hover:text-primary-text hover:bg-bg-card transition-colors shadow-sm"
-          >
-            <span>Deploy to Netlify</span>
-          </a>
-        </div>
-
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -89,17 +78,6 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-
-            <div className="h-px bg-divider/50 my-2" />
-
-            <a
-              href="https://app.netlify.com/start/deploy?repository=https://github.com/your-username/your-repo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-full border border-divider py-3 text-xs font-bold text-secondary-text hover:text-primary-text hover:bg-bg-card transition-all"
-            >
-              <span>Deploy to Netlify</span>
-            </a>
           </nav>
         </div>
       )}

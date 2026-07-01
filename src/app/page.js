@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { calculateCreditCost } from "@/lib/utils/pricing";
+import { apiFetch, apiFetchFormData } from "@/lib/utils/api";
 import {
   FaHeart,
   FaUpload,
@@ -210,11 +211,10 @@ export default function WorkspacePage() {
   // Fetch creations history
   const fetchHistory = async () => {
     try {
-      const res = await fetch("/api/creations");
+      const res = await apiFetch("/api/creations");
       if (res.ok) {
         const data = await res.json();
         setHistory(data);
-        // If there's an active processing creation, resume polling
         const processing = data.find((c) => c.status === "processing");
         if (processing && !generating) {
           startPolling(processing.requestId);
@@ -365,10 +365,7 @@ export default function WorkspacePage() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    const res = await apiFetchFormData("/api/upload", formData);
 
     if (!res.ok) {
       const text = await res.text();
@@ -423,10 +420,10 @@ export default function WorkspacePage() {
 
     pollingIntervalRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`/api/creations?requestId=${requestId}`);
+        const res = await apiFetch(`/api/creations?requestId=${requestId}`);
         if (res.ok) {
           const result = await res.json();
-            if (result.status === "completed" || result.status === "failed") {
+          if (result.status === "completed" || result.status === "failed") {
               stopPolling();
               setGenerating(false);
               fetchHistory();
@@ -487,9 +484,8 @@ export default function WorkspacePage() {
       const finalStitchedUrl = await uploadImage(file);
 
       // 2. Submit task to creations route
-      const res = await fetch("/api/creations", {
+      const res = await apiFetch("/api/creations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           maleImage: maleUrl,
           femaleImage: femaleUrl,

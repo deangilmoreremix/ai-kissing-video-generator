@@ -3,16 +3,16 @@ import config from "@/lib/config";
 
 export async function POST(req) {
   try {
+    const key = req.headers.get("x-mu-api-key") || config.ai.apiKey;
+    if (!key) {
+      return new NextResponse("MUAPI key missing. Please add your key in Settings.", { status: 400 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file");
 
     if (!file) {
       return new NextResponse("No file provided", { status: 400 });
-    }
-
-    const apiKey = config.ai.apiKey;
-    if (!apiKey) {
-      return new NextResponse("API Key not configured", { status: 500 });
     }
 
     console.log(`[UPLOAD_API] File details: name=${file.name}, size=${file.size}, type=${file.type}`);
@@ -23,7 +23,7 @@ export async function POST(req) {
     const response = await fetch(config.ai.uploadEndpoint, {
       method: "POST",
       headers: {
-        "x-api-key": apiKey,
+        "x-api-key": key,
       },
       body: muapiFormData,
     });

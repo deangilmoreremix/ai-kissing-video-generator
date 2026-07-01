@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FaDownload, FaSpinner, FaTrash, FaVideo, FaHeart, FaPlay } from "react-icons/fa";
+import { apiFetch } from "@/lib/utils/api";
 
 export default function GalleryPage() {
   const [creations, setCreations] = useState([]);
@@ -12,7 +13,7 @@ export default function GalleryPage() {
   const fetchCreations = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/creations");
+      const res = await apiFetch("/api/creations");
       if (res.ok) {
         const data = await res.json();
         setCreations(data.filter(c => c.status === "completed"));

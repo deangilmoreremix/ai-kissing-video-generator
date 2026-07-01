@@ -9,7 +9,10 @@ export const AIService = {
     return calculateCreditCost(modelId, duration, resolution);
   },
 
-  async generate({ maleImage, femaleImage, prompt, modelId, aspectRatio = "16:9", duration, stitchedImage, resolution }) {
+  async generate(
+    { maleImage, femaleImage, prompt, modelId, aspectRatio = "16:9", duration, stitchedImage, resolution },
+    apiKey
+  ) {
     if (!maleImage || !femaleImage) {
       throw new Error("Both male and female images are required.");
     }
@@ -22,12 +25,12 @@ export const AIService = {
 
     const cost = this.getCreditCost(modelId, duration, resolution);
 
-    const apiKey = config.ai.apiKey;
-    if (!apiKey) throw new Error("MUAPIAPP_API_KEY is not configured");
+    const key = apiKey || config.ai.apiKey;
+    if (!key) throw new Error("MUAPI key is not configured");
 
     const bodyPayload = {
       prompt: prompt,
-      webhook: `${config.webhookUrl}/api/webhooks/ai`
+      webhook: `${config.webhookUrl}/api/webhooks/ai`,
     };
 
     if (modelId === "veo3.1-image-to-video") {
@@ -59,7 +62,7 @@ export const AIService = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey,
+        "x-api-key": key,
       },
       body: JSON.stringify(bodyPayload),
     });
@@ -84,7 +87,7 @@ export const AIService = {
         prompt: prompt,
         model_id: modelId,
         aspect_ratio: aspectRatio,
-        duration: modelId === "veo3.1-image-to-video" ? 8 : (parseInt(duration) || 5),
+        duration: modelId === "veo3.1-image-to-video" ? 8 : parseInt(duration) || 5,
         request_id: request_id,
         status: "processing",
         credit_cost: cost,
@@ -122,7 +125,7 @@ export const AIService = {
     const status = result.status || result.state;
     if (status === "completed" || status === "succeeded") {
       const outputs = result.outputs || [];
-      const outputUrl = outputs[0] || (typeof result.output === 'string' ? result.output : result.output?.urls?.get || result.output?.video);
+      const outputUrl = outputs[0] || (typeof result.output === "string" ? result.output : result.output?.urls?.get || result.output?.video);
 
       if (outputUrl) {
         const { data: updated } = await db
@@ -154,20 +157,20 @@ export const AIService = {
     return { status: "processing" };
   },
 
-  async checkStatus(requestId) {
+  async checkStatus(requestId, apiKey) {
     const res = await this.processResult(requestId, {});
     if (res && res.status !== "processing") return res;
 
-    const apiKey = config.ai.apiKey;
-    if (!apiKey) throw new Error("API Key is not configured");
+    const key = apiKey || config.ai.apiKey;
+    if (!key) throw new Error("API Key is not configured");
 
     try {
       const res = await fetch(config.ai.pollEndpoint(requestId), {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        }
+          "x-api-key": key,
+        },
       });
 
       if (res.ok) {
@@ -179,5 +182,5 @@ export const AIService = {
     }
 
     return { status: "processing" };
-  }
+  },
 };
