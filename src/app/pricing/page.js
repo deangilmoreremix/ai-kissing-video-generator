@@ -1,12 +1,9 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { FaCheck, FaInfoCircle } from "react-icons/fa";
-import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
 
 const PLANS = [
   { id: "basic", name: "Basic Pack", price: "$5", credits: 100, description: "Perfect for testing custom prompts and exploring styles." },
@@ -16,34 +13,10 @@ const PLANS = [
 ];
 
 export default function Pricing() {
-  const { data: session, status } = useSession();
   const [loadingPlan, setLoadingPlan] = useState(null);
-
-  const handleCheckout = async (planId) => {
-    if (status !== "authenticated") {
-      toast.error("You must sign in with Google to purchase credit packages.");
-      return;
-    }
-
-    setLoadingPlan(planId);
-    try {
-      const { data } = await axios.post("/api/checkout", { planId });
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No redirection URL returned");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.error || "Failed to trigger Stripe checkout session.");
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg-page select-none text-primary-text overflow-hidden">
-      <Toaster position="top-right" />
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-12 sm:px-6 lg:px-8 flex flex-col gap-10 overflow-y-auto scrollbar-subtle items-center">
@@ -54,7 +27,7 @@ export default function Pricing() {
           </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight uppercase">Buy Credits Packs</h1>
           <p className="text-xs sm:text-sm text-secondary-text max-w-lg leading-relaxed">
-            Purchase flexible credit packages to perform high-resolution predictions. Keep all profits — we handle AI infrastructure.
+            Pricing information. Contact sales to purchase credit packages.
           </p>
         </div>
 
@@ -78,13 +51,13 @@ export default function Pricing() {
                   <h3 className="text-sm font-extrabold uppercase tracking-wide text-primary-text">{plan.name}</h3>
                   <p className="text-2xl font-black tracking-tight text-white">{plan.price}</p>
                 </div>
-                
+
                 <div className="text-xs bg-bg-page/50 border border-divider/30 p-3 rounded text-center font-extrabold text-primary">
                   {plan.credits} Art Credits
                 </div>
 
                 <p className="text-xs text-secondary-text leading-relaxed font-medium min-h-[3rem]">{plan.description}</p>
-                
+
                 <ul className="space-y-2 border-t border-divider/30 pt-4 text-xs font-semibold text-secondary-text">
                   <li className="flex items-center gap-2">
                     <FaCheck className="text-primary text-[10px]" />
@@ -102,13 +75,10 @@ export default function Pricing() {
               </div>
 
               <button
-                onClick={() => handleCheckout(plan.id)}
-                disabled={loadingPlan !== null}
-                className={`w-full py-3 rounded-full text-xs font-bold transition-all shadow-md cursor-pointer select-none active:scale-[0.98] ${
-                  plan.popular ? "bg-primary text-white hover:bg-primary-hover shadow-primary/15" : "bg-bg-page hover:bg-bg-card text-primary-text border border-divider"
-                }`}
+                disabled
+                className="w-full py-3 rounded-full text-xs font-bold transition-all shadow-md cursor-not-allowed select-none bg-zinc-800 text-zinc-400"
               >
-                {loadingPlan === plan.id ? "Loading checkout..." : "Purchase Credits"}
+                Coming Soon
               </button>
             </div>
           ))}

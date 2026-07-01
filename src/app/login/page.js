@@ -1,13 +1,17 @@
 "use client";
 
-import { signIn, useSession } from "next-auth/react";
-import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { FaGoogle, FaInfoCircle } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-function LoginContent() {
-  const { data: session, status } = useSession();
+export default function LoginPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
+
+  return null;
+}
   const searchParams = useSearchParams();
   const next = searchParams.get("callbackUrl") || searchParams.get("next") || "/";
 

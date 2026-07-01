@@ -1,23 +1,15 @@
-import { prisma } from "@/lib/prisma";
-import { UserService } from "./user";
 import config from "@/lib/config";
 import { calculateCreditCost } from "@/lib/utils/pricing";
+import { createAdminClient } from "@/lib/supabase";
 
-/**
- * Service to manage Kissing Video generations using various image-to-video models.
- */
+const supabase = () => createAdminClient();
+
 export const AIService = {
-  /**
-   * Get credit cost for a specific model
-   */
   getCreditCost(modelId, duration, resolution) {
     return calculateCreditCost(modelId, duration, resolution);
   },
 
-  /**
-   * Submit an image-to-video task to MuAPI
-   */
-  async generate(userId, { maleImage, femaleImage, prompt, modelId, aspectRatio = "16:9", duration, stitchedImage, resolution }) {
+  async generate({ maleImage, femaleImage, prompt, modelId, aspectRatio = "16:9", duration, stitchedImage, resolution }) {
     if (!maleImage || !femaleImage) {
       throw new Error("Both male and female images are required.");
     }
@@ -29,12 +21,10 @@ export const AIService = {
     if (!model) throw new Error(`Invalid model selected: ${modelId}`);
 
     const cost = this.getCreditCost(modelId, duration, resolution);
-    await UserService.deductCredits(userId, cost);
 
     const apiKey = config.ai.apiKey;
     if (!apiKey) throw new Error("MUAPIAPP_API_KEY is not configured");
 
-    // Build request payload dynamically based on model schemas
     const bodyPayload = {
       prompt: prompt,
       webhook: `${config.auth.webhook_url}/api/webhooks/ai`
@@ -61,12 +51,10 @@ export const AIService = {
       bodyPayload.duration = parseInt(duration) || 6;
       bodyPayload.mode = "normal";
     } else {
-      // Fallback
       bodyPayload.image_url = stitchedImage;
       bodyPayload.aspect_ratio = aspectRatio;
     }
 
-    // Submit task
     const submitRes = await fetch(model.endpoint, {
       method: "POST",
       headers: {
@@ -78,100 +66,98 @@ export const AIService = {
 
     if (!submitRes.ok) {
       const errorText = await submitRes.text();
-      // Refund credits on failure before throwing
-      await UserService.addCredits(userId, cost);
       throw new Error(`API Submission Failed: ${submitRes.status} ${errorText}`);
     }
 
     const { request_id } = await submitRes.json();
     if (!request_id) {
-      await UserService.addCredits(userId, cost);
       throw new Error("No request_id received from API");
     }
 
-    // Save kissing video creation record
-    const creation = await prisma.kissingVideoCreation.create({
-      data: {
-        userId,
-        maleImage,
-        femaleImage,
-        prompt,
-        modelId,
-        aspectRatio,
+    const db = supabase();
+    const { data: creation, error } = await db
+      .from("kissing_video_creations")
+      .insert({
+        male_image: maleImage,
+        female_image: femaleImage,
+        stitched_image: stitchedImage,
+        prompt: prompt,
+        model_id: modelId,
+        aspect_ratio: aspectRatio,
         duration: modelId === "veo3.1-image-to-video" ? 8 : (parseInt(duration) || 5),
-        requestId: request_id,
+        request_id: request_id,
         status: "processing",
-        creditCost: cost,
-      }
-    });
+        credit_cost: cost,
+        resolution: resolution || "720p",
+      })
+      .select("*")
+      .single();
+
+    if (error) throw new Error(`Database insert failed: ${error.message}`);
 
     return creation;
   },
 
-  /**
-   * Universal method to process AI results from polling or webhooks
-   */
   async processResult(requestId, result) {
     console.log("[AI_SERVICE_PROCESS_RESULT] RequestId:", requestId);
     console.log("[AI_SERVICE_PROCESS_RESULT] Payload:", JSON.stringify(result));
-    
-    const creation = await prisma.kissingVideoCreation.findUnique({
-      where: { requestId }
-    });
 
-    if (!creation) return null;
+    const db = supabase();
+    const { data: creation, error } = await db
+      .from("kissing_video_creations")
+      .select("*")
+      .eq("request_id", requestId)
+      .maybeSingle();
 
-    // If it's already finished in database, return it
+    if (error || !creation) return null;
+
     if (creation.status === "completed") {
-      return { status: "completed", resultVideo: creation.resultVideo };
+      return { status: "completed", resultVideo: creation.result_video };
     }
 
     if (creation.status === "failed") {
       return { status: "failed", error: creation.error };
     }
 
-    // Check if result indicates finished
     const status = result.status || result.state;
     if (status === "completed" || status === "succeeded") {
       const outputs = result.outputs || [];
       const outputUrl = outputs[0] || (typeof result.output === 'string' ? result.output : result.output?.urls?.get || result.output?.video);
-      
+
       if (outputUrl) {
-        const updated = await prisma.kissingVideoCreation.update({
-          where: { id: creation.id },
-          data: {
+        const { data: updated } = await db
+          .from("kissing_video_creations")
+          .update({
             status: "completed",
-            resultVideo: outputUrl,
-          }
-        });
-        return { status: "completed", resultVideo: updated.resultVideo };
+            result_video: outputUrl,
+          })
+          .eq("request_id", requestId)
+          .select("*")
+          .single();
+
+        return { status: "completed", resultVideo: updated?.result_video || outputUrl };
       }
     } else if (status === "failed") {
       const errorMsg = result.error || "Prediction failed";
-      const updated = await prisma.kissingVideoCreation.update({
-        where: { id: creation.id },
-        data: {
+
+      await db
+        .from("kissing_video_creations")
+        .update({
           status: "failed",
           error: errorMsg,
-        }
-      });
-      // Refund credits on failure
-      await UserService.addCredits(creation.userId, creation.creditCost);
-      return { status: "failed", error: updated.error };
+        })
+        .eq("request_id", requestId);
+
+      return { status: "failed", error: errorMsg };
     }
 
     return { status: "processing" };
   },
 
-  /**
-   * Check status of generation (either from database or polling MuAPI API)
-   */
-  async checkStatus(requestId, userId) {
-    // First check if we already have it in DB
+  async checkStatus(requestId) {
     const res = await this.processResult(requestId, {});
     if (res && res.status !== "processing") return res;
 
-    // Fallback: poll MuAPI prediction result endpoint
     const apiKey = config.ai.apiKey;
     if (!apiKey) throw new Error("API Key is not configured");
 

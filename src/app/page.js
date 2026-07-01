@@ -1,6 +1,5 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
 import { calculateCreditCost } from "@/lib/utils/pricing";
 import {
@@ -85,13 +84,6 @@ function ImageUploadZone({
 }
 
 export default function WorkspacePage() {
-  const {
-    data: session,
-    status: authStatus,
-    update: updateSession,
-  } = useSession();
-
-  // File uploading states
   const [maleFile, setMaleFile] = useState(null);
   const [femaleFile, setFemaleFile] = useState(null);
   const [maleUrl, setMaleUrl] = useState("");
@@ -236,13 +228,9 @@ export default function WorkspacePage() {
   };
 
   useEffect(() => {
-    if (session) {
-      fetchHistory();
-    } else if (authStatus !== "loading") {
-      setLoadingHistory(false);
-    }
+    fetchHistory();
     return () => stopPolling();
-  }, [session, authStatus]);
+  }, []);
 
   // Click outside dropdowns to close them
   useEffect(() => {
@@ -438,15 +426,12 @@ export default function WorkspacePage() {
         const res = await fetch(`/api/creations?requestId=${requestId}`);
         if (res.ok) {
           const result = await res.json();
-          if (result.status === "completed" || result.status === "failed") {
-            stopPolling();
-            setGenerating(false);
-            fetchHistory(); // Refresh history list
+            if (result.status === "completed" || result.status === "failed") {
+              stopPolling();
+              setGenerating(false);
+              fetchHistory();
 
-            // Re-fetch session to sync user credit hearts
-            if (updateSession) updateSession();
-
-            if (result.status === "completed") {
+              if (result.status === "completed") {
               // Load completed video in preview
               setActiveCreation({
                 resultVideo: result.resultVideo,
@@ -475,11 +460,6 @@ export default function WorkspacePage() {
 
   // Submit Generation
   const handleGenerate = async () => {
-    if (!session) {
-      signIn("google");
-      return;
-    }
-
     if (!maleUrl || !femaleUrl || !stitchedUrl) {
       alert(
         "Please upload both male and female photos to create the composite kissing image.",
@@ -1075,7 +1055,7 @@ export default function WorkspacePage() {
                   time.
                 </p>
               </div>
-              {session?.user && history.length > 0 && (
+              {history.length > 0 && (
                 <button
                   onClick={() => setActiveCreation(history[0])}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 rounded text-xs font-semibold transition-colors cursor-pointer"
@@ -1097,19 +1077,6 @@ export default function WorkspacePage() {
           {loadingHistory ? (
             <div className="flex-1 flex items-center justify-center">
               <FaSpinner className="animate-spin text-rose-500 text-sm" />
-            </div>
-          ) : !session ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-4 border border-zinc-800/60 rounded bg-zinc-900/10 text-center">
-              <p className="text-xs text-zinc-400">
-                Sign in to securely view and save your historical feed
-                creations.
-              </p>
-              <button
-                onClick={() => signIn("google")}
-                className="mt-3.5 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded text-xs font-bold cursor-pointer"
-              >
-                Sign In With Google
-              </button>
             </div>
           ) : history.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-4 border border-zinc-800/60 rounded bg-zinc-900/10 text-center">

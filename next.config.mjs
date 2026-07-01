@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  // Netlify handles SSR/SSG via its Next.js plugin
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;
