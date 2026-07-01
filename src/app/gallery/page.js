@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FaDownload, FaSpinner, FaTrash, FaVideo, FaHeart, FaPlay } from "react-icons/fa";
 
 export default function GalleryPage() {
@@ -9,11 +9,7 @@ export default function GalleryPage() {
   const [downloading, setDownloading] = useState(null);
   const [selectedCreation, setSelectedCreation] = useState(null);
 
-  useEffect(() => {
-    fetchCreations();
-  }, []);
-
-  const fetchCreations = async () => {
+  const fetchCreations = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/creations");
@@ -26,7 +22,11 @@ export default function GalleryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCreations();
+  }, [fetchCreations]);
 
   const handleDownload = async (url, id) => {
     if (downloading) return;

@@ -27,7 +27,7 @@ export const AIService = {
 
     const bodyPayload = {
       prompt: prompt,
-      webhook: `${config.auth.webhook_url}/api/webhooks/ai`
+      webhook: `${config.webhookUrl}/api/webhooks/ai`
     };
 
     if (modelId === "veo3.1-image-to-video") {

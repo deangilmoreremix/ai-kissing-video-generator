@@ -4,6 +4,7 @@
 
 const config = {
   appName: "Ai Kissing Video Generator",
+  webhookUrl: process.env.WEBHOOK_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
   ai: {
     apiKey: process.env.MU_API_KEY,
     uploadEndpoint: "https://api.muapi.ai/api/v1/upload_file",
