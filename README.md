@@ -1,8 +1,8 @@
 # 💖 AI Kissing Video Generator — Open-Source AI Romance Video SaaS (Powered by Veo 3, Wan 2.7 & Gemini Omni)
 
-> **Merge two portrait photos into a photorealistic romantic kissing video in seconds.** A production-ready, self-hostable Next.js SaaS boilerplate with multi-model AI video generation (Veo 3, Wan 2.7, Gemini Omni, Grok), webhook-backed async delivery, a personal video gallery, and built-in Stripe billing. Powered by the MuAPI AI engine.
+> **Merge two portrait photos into a photorealistic romantic kissing video in seconds.** A production-ready, self-hostable Next.js SaaS boilerplate with multi-model AI video generation (Veo 3, Wan 2.7, Gemini Omni, Grok), webhook-backed async delivery, a personal video gallery, and per-user MuAPI keys. Powered by the MuAPI AI engine.
 
-**Tech stack:** Next.js 14 (App Router) · Prisma · PostgreSQL · NextAuth (Google OAuth) · Stripe · Tailwind CSS · MuAPI · Webhook-backed async delivery
+**Tech stack:** Next.js 14 (App Router) · Prisma · PostgreSQL (Supabase) · Clerk (Auth) · Tailwind CSS · MuAPI · Webhook-backed async delivery
 **Use cases:** Romance content creators · Couples apps · Valentine's Day apps · Social media viral videos · AI entertainment · Fun video generators · Creative gifting tools · Short-form video content
 
 <p align="center">
@@ -27,11 +27,11 @@
 
 ---
 
-AI Kissing Video Generator is a production-ready, highly-optimized AI web application. Out of the box, it seamlessly manages User Authentication, Credits & Billing, Image Upload Proxying, and asynchronous AI scene rendering using a sleek Next.js (App Router) architecture. It empowers romance content creators, couples, and marketing agencies to create high-fidelity emotional animations featuring two separate individuals merged into a single beautiful video scene.
+AI Kissing Video Generator is a production-ready, highly-optimized AI web application. Out of the box, it seamlessly manages User Authentication, Image Upload Proxying, and asynchronous AI scene rendering using a sleek Next.js (App Router) architecture. It empowers romance content creators, couples, and marketing agencies to create high-fidelity emotional animations featuring two separate individuals merged into a single beautiful video scene.
 
 **Why use AI Kissing Video Generator?**
 
-- **Production-Ready SaaS** — Complete with Google OAuth and Stripe Checkout workflows built-in.
+- **Production-Ready SaaS** — Complete with Clerk authentication built-in.
 - **Side-by-Side Auto-Stitching** — Take exactly two images (male and female) and stitch them together dynamically in the frontend canvas before submitting.
 - **Multiple Models** — Support for Google's cinematic `veo3.1-image-to-video`, fast high-motion `wan2.7-image-to-video`, coherent `gemini-omni-image-to-video`, and creative `grok-imagine-image-to-video`.
 - **Webhook-Backed AI Delivery** — MuAPI async webhook delivers results directly into the database (`/api/webhooks/ai`), keeping API routes non-blocking and preventing request timeouts.
@@ -45,11 +45,11 @@ AI Kissing Video Generator is a production-ready, highly-optimized AI web applic
 ### 🎨 AI Kissing Studio (Main Page `/`)
 - Two distinct photo dropzones: Left Image (Male) and Right Image (Female).
 - Real-time side-by-side composite canvas stitching to seamlessly combine both profiles.
-- 4 AI Models with dynamic resolution and duration-based pricing:
-  - **Veo 3.1 Pro** — Renders cinematic high-fidelity exactly at 8s. Supports `720p` (500 Hearts), `1080p` (650 Hearts), and `4k` (740 Hearts).
-  - **Gemini Omni** — High semantic coherence. Supports `4-10s` and `720p/1080p` (60 + 30 * duration Hearts) or `4k` (300 + 30 * duration Hearts).
-  - **Grok Imagine** — Dynamic layout composition. Supports `6-30s` and `480p` (5 * duration Hearts) or `720p` (10 * duration Hearts).
-  - **Wan 2.7** — Extreme high-speed dynamic movement. Supports `2-15s` and `720p` (26 * duration Hearts) or `1080p` (40 * duration Hearts).
+- 4 AI Models with dynamic resolution and duration support:
+  - **Veo 3.1 Pro** — Renders cinematic high-fidelity exactly at 8s. Supports `720p`, `1080p`, and `4k`.
+  - **Gemini Omni** — High semantic coherence. Supports `4-10s` and `720p`/`1080p` or `4k`.
+  - **Grok Imagine** — Dynamic layout composition. Supports `6-30s` and `480p` or `720p`.
+  - **Wan 2.7** — Extreme high-speed dynamic movement. Supports `2-15s` and `720p` or `1080p`.
 - Editable default prompt: customizable to fit various kissing speeds, backdrops, and styles.
 
 ### 🖼️ Creations History Gallery
@@ -58,18 +58,9 @@ AI Kissing Video Generator is a production-ready, highly-optimized AI web applic
 - Playback details with an overlay, prompt details, model ID, and original reference image references.
 - Auto-polls every 4 seconds for processing gallery items, plus 3 seconds active generation polling.
 
-### 💳 Stripe Credit Billing (`/pricing`)
-- Four romance-themed credit packs (purchasing **Hearts** at `$1 = 200 Hearts`):
-  - **Basic Kiss Pack** ($5 / 1,000 Hearts) — Up to 2 Veo 3.1 or 7 Wan 2.7 generations.
-  - **Sweetheart Pack** ($10 / 2,000 Hearts) — Up to 4 Veo 3.1, 15 Wan 2.7, or 6 Gemini Omni generations.
-  - **Romance Pro Pack** ($20 / 4,000 Hearts — Most Popular) — Up to 8 Veo 3.1, 30 Wan 2.7, or 13 Gemini Omni generations.
-  - **Cupid Elite Pack** ($50 / 10,000 Hearts) — Up to 20 Veo 3.1, 76 Wan 2.7, or 33 Gemini Omni generations.
-- Credit balance is automatically topped up via Stripe webhook on checkout completion.
-
-### 🔐 Clerk Auth + Per-User API Keys + Credit Persistence
-- Authentication is handled by [Clerk](https://clerk.com) (`@clerk/nextjs`) via `clerkMiddleware` and `<ClerkProvider>`. Each Clerk identity is linked to a Prisma `User` record (by `clerkId`), so credit balances and galleries persist per account.
-- Users can add their **own MuAPI key** in **Settings (`/settings`)** so generations run under their account; otherwise the shared `MU_API_KEY` is used as a fallback.
-- Credits and the saved API-key status are displayed live in the Navbar.
+### 🔐 Clerk Auth + Per-User API Keys
+- Authentication is handled by [Clerk](https://clerk.com) (`@clerk/nextjs`) via `clerkMiddleware` and `<ClerkProvider>`. Each Clerk identity is linked to a Prisma `User` record (by `clerkId`), so galleries persist per account.
+- Users can add their **own MuAPI key** in **Settings (`/settings`)** so generations run under their account; otherwise the shared `MU_API_KEY` is used as a fallback. Generation is free — it draws directly on the user's (or the shared) MuAPI quota.
 
 ---
 
@@ -89,14 +80,11 @@ To successfully deploy and run, you must populate the following environment vari
 | :--- | :--- | :--- |
 | **Database (Supabase)** | `DATABASE_URL` | Supabase Postgres connection string (pooled) |
 | | `DIRECT_URL` | Supabase direct (non-pooling) PostgreSQL URL for migrations |
-| **App URL** | `NEXT_PUBLIC_APP_URL` | Public base URL of the app (Stripe redirects, webhooks) |
+| **App URL** | `NEXT_PUBLIC_APP_URL` | Public base URL of the app (webhooks) |
 | | `WEBHOOK_URL` | Public URL for MuAPI async callbacks (defaults to `NEXT_PUBLIC_APP_URL`) |
 | **Clerk Auth** | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Get from [Clerk Dashboard](https://dashboard.clerk.com) |
 | | `CLERK_SECRET_KEY` | Get from [Clerk Dashboard](https://dashboard.clerk.com) |
 | | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Path to the sign-in page (e.g. `/login`) |
-| **Stripe Billing** | `STRIPE_SECRET_KEY` | Get from [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
-| | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Get from [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
-| | `STRIPE_WEBHOOK_SECRET` | Webhook secret for resolving credit purchases |
 | **AI Generation** | `MU_API_KEY` | Server-wide fallback MuAPI key from [muapi.ai/access-keys](https://muapi.ai/access-keys?utm_source=github&utm_medium=readme&utm_campaign=ai-kissing-video-generator). Users can also supply their own key in Settings. |
 
 ### 🚀 Launching on Vercel: Step-by-Step
@@ -107,8 +95,6 @@ To successfully deploy and run, you must populate the following environment vari
 4. **Deploy**: Hit "Deploy". Vercel will automatically run the build steps (`npm run build`).
 5. **Database Push**: Run `npx prisma db push` to synchronize database models before launching.
 6. **Integrations Setup**:
-   - Establish a **Google Cloud OAuth app**, enabling the callback URL: `https://your-app.vercel.app/api/auth/callback/google`
-   - Setup a **Stripe Webhook**, pointing to `https://your-app.vercel.app/api/stripe/webhook` and selecting the `checkout.session.completed` event.
    - Register a **MuAPI Webhook** pointing to `https://your-app.vercel.app/api/webhooks/ai` to receive async generation results.
 
 ---
@@ -171,43 +157,35 @@ ai-kissing-video-generator/
 ├── src/
 │   ├── app/                           # Next.js App Router
 │   │   ├── page.js                    # Main Kiss Workspace (Uploads, aspect, models, prompts)
-│   │   ├── pricing/                   # Pricing page with 4 credit billing plans
-│   │   │   └── page.js
 │   │   ├── gallery/                   # Gallery route with completions CSS grid
+│   │   │   └── page.js
+│   │   ├── settings/                  # User settings (manage MuAPI key)
 │   │   │   └── page.js
 │   │   ├── globals.css                # Global CSS configurations (Tailwind 4)
 │   │   ├── layout.js                  # App router top-level layout
 │   │   └── api/
-│   │       ├── auth/                  # NextAuth credentials handling
-│   │       │   └── [...nextauth]/
-│   │       │       └── route.js
 │   │       ├── creations/             # GET (fetch history & polling) and POST (submit new tasks)
 │   │       │   └── route.js
 │   │       ├── upload/                # Proxy to forward images securely to MuAPI
 │   │       │   └── route.js
-│   │       ├── stripe/                # Stripe billing routes
-│   │       │   ├── checkout/
-│   │       │   │   └── route.js       # Create checkout session
-│   │       │   └── webhook/
-│   │       │       └── route.js       # Stripe event fulfillment callback
+│   │       ├── user/                  # GET current user profile (credits, key status)
+│   │       │   └── route.js
+│   │       ├── settings/              # GET/POST user MuAPI key
+│   │       │   └── route.js
 │   │       └── webhooks/              # MuAPI webhooks
 │   │           └── ai/
 │   │               └── route.js       # Async generation completion callback
 │   ├── components/
-│   │   ├── Providers.jsx              # SessionProvider wrapper
-│   │   └── saas/
-│   │       ├── AuthButtons.jsx        # Google Login & Logout controls
-│   │       ├── CreditBadge.jsx        # Navbar credit status heart indicator
-│   │       └── Navbar.jsx             # Sticky layout navbar header
+│   │   ├── Navbar.js                  # Sticky layout navbar (Clerk auth, Settings)
+│   │   ├── UserSync.jsx               # Bridges Clerk identity to Prisma user + credits context
+│   │   └── Footer.js
 │   └── lib/
-│       ├── auth.js                    # NextAuth adapter configuration
+│       ├── auth.js                    # Clerk -> Prisma user bridge
 │       ├── config.js                  # Central environment configurations
 │       ├── prisma.js                  # Cached Prisma Client instance
-│       ├── stripe.js                  # Stripe client initialization
 │       └── services/
 │           ├── ai.js                  # Submit task, check status, and process callbacks
-│           ├── billing.js             # Checkout creation and webhook processing
-│           └── user.js                # Add, deduct, and refund credit balances
+│           └── user.js                # Credit balance helpers
 ```
 
 ---

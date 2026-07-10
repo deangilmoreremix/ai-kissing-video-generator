@@ -5,15 +5,13 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { IoClose, IoMenu } from "react-icons/io5";
-import { FiMoon, FiSun, FiLogOut, FiDollarSign, FiPlus, FiUser, FiSettings } from "react-icons/fi";
+import { FiMoon, FiSun, FiLogOut, FiUser, FiSettings } from "react-icons/fi";
 import { SiVercel } from "react-icons/si";
 import config from "@/lib/config";
-import { useAppUser } from "@/components/UserSync";
 
 export default function Navbar() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut, openSignIn } = useClerk();
-  const { credits } = useAppUser();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -33,13 +31,11 @@ export default function Navbar() {
     ? [
         { name: "Workspace", path: `/app/${currentAppId}` },
         { name: "Gallery", path: `/app/${currentAppId}/gallery` },
-        { name: "Pricing", path: `/app/${currentAppId}/pricing` },
         { name: "Settings", path: `/settings` },
       ]
     : [
         { name: "Workspace", path: "/" },
         { name: "Gallery", path: "/gallery" },
-        { name: "Pricing", path: "/pricing" },
         { name: "Settings", path: "/settings" },
       ];
 
@@ -94,26 +90,12 @@ export default function Navbar() {
 
           {isSignedIn ? (
             <div className="flex items-center">
-              {/* Credit Balance indicator */}
-              <div className="flex items-center h-9 border border-divider rounded-l bg-bg-page/30 overflow-hidden pr-2">
-                <span className="font-bold text-[13px] px-3 flex items-center text-primary-text gap-1">
-                  <FiDollarSign className="text-emerald-500 text-xs" />
-                  {credits}
-                </span>
-                <Link
-                  href="/pricing"
-                  className="flex items-center justify-center w-5 h-5 rounded hover:bg-bg-card text-secondary-text transition-colors"
-                >
-                  <FiPlus size={14} />
-                </Link>
-              </div>
-
               {/* Profile Menu Toggle */}
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   onBlur={() => setTimeout(() => setIsProfileOpen(false), 200)}
-                  className="h-9 w-9 flex items-center justify-center border-y border-r border-divider rounded-r bg-bg-page/30 hover:bg-bg-page transition-colors cursor-pointer"
+                  className="h-9 w-9 flex items-center justify-center border border-divider rounded bg-bg-page/30 hover:bg-bg-page transition-colors cursor-pointer"
                 >
                   {user?.imageUrl ? (
                     <img
@@ -163,13 +145,6 @@ export default function Navbar() {
 
         {/* Mobile Navbar Hamburger Menu Controls */}
         <div className="flex md:hidden items-center gap-2">
-          {isSignedIn && (
-            <div className="flex items-center h-8 border border-divider rounded bg-bg-page/30 px-2.5 text-xs font-bold text-primary-text gap-0.5">
-              <FiDollarSign className="text-emerald-500 text-[10px]" />
-              {credits}
-            </div>
-          )}
-          
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="hover:bg-bg-card p-2 rounded cursor-pointer transition-colors text-primary-text border border-divider/50"

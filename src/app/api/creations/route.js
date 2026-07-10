@@ -64,12 +64,6 @@ export async function POST(req) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Check credits
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { credits: true }
-    });
-
     const { maleImage, femaleImage, stitchedImage, prompt, modelId, aspectRatio, duration, resolution } = await req.json();
 
     if (!maleImage || !femaleImage || !stitchedImage) {
@@ -80,11 +74,6 @@ export async function POST(req) {
     }
     if (!modelId) {
       return new NextResponse("Missing modelId", { status: 400 });
-    }
-
-    const cost = AIService.getCreditCost(modelId, duration, resolution);
-    if (!dbUser || dbUser.credits < cost) {
-      return new NextResponse(`Insufficient credits. Required: ${cost}, balance: ${dbUser?.credits ?? 0}`, { status: 400 });
     }
 
     const creation = await AIService.generate(user.id, {

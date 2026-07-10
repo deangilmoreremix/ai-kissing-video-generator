@@ -3,7 +3,6 @@
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useAppUser } from "@/components/UserSync";
 import { useState, useEffect, useRef } from "react";
-import { calculateCreditCost } from "@/lib/utils/pricing";
 import {
   FaHeart,
   FaUpload,
@@ -168,16 +167,6 @@ export default function WorkspacePage() {
       setResolution(params.defaultResolution);
     }
   }, [modelId]);
-
-  const currentCost = calculateCreditCost(modelId, duration, resolution);
-
-  const getModelCost = (mId) => {
-    const params = modelParams[mId];
-    if (!params) return 0;
-    const testDur = params.durations.includes(duration) ? duration : params.defaultDuration;
-    const testRes = params.resolutions.includes(resolution) ? resolution : params.defaultResolution;
-    return calculateCreditCost(mId, testDur, testRes);
-  };
 
   // Available models matching user instruction and config.js
   const models = [
@@ -596,9 +585,6 @@ export default function WorkspacePage() {
               </p>
             </div>
             <div className="flex items-center gap-2.5 flex-shrink-0">
-              <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-500/25 text-rose-300">
-                {currentCost} Hearts
-              </span>
               {modelDropdownOpen ? (
                 <FaChevronUp className="text-xs text-zinc-400" />
               ) : (
@@ -644,15 +630,6 @@ export default function WorkspacePage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                          modelId === m.id
-                            ? "bg-rose-500/25 text-rose-300"
-                            : "bg-zinc-800 text-zinc-400"
-                        }`}
-                      >
-                        {getModelCost(m.id)} Hearts
-                      </span>
                       {modelId === m.id && (
                         <FaCheck className="text-[9px] text-rose-400 ml-1.5" />
                       )}
@@ -984,7 +961,7 @@ export default function WorkspacePage() {
           ) : (
             <>
               <FaHeart className="text-xs animate-pulse" />
-              <span>Generate Kiss Video ({currentCost} Hearts)</span>
+              <span>Generate Kiss Video</span>
             </>
           )}
         </button>
@@ -1014,8 +991,8 @@ export default function WorkspacePage() {
                 </p>
               </div>
               <div className="text-[10px] text-zinc-500 bg-zinc-900/60 px-3 py-1.5 rounded border border-zinc-800">
-                🔒 Safe execution: if rendering fails, your Hearts will be fully
-                refunded.
+                🔒 Safe execution: generations are free — if rendering fails, no
+                charge is made against your MuAPI key.
               </div>
             </div>
           ) : activeCreation?.resultVideo ? (

@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { UserService } from "./user";
 import config from "@/lib/config";
 import { calculateCreditCost } from "@/lib/utils/pricing";
 
@@ -48,8 +47,8 @@ export const AIService = {
     const model = config.ai.models[modelId];
     if (!model) throw new Error(`Invalid model selected: ${modelId}`);
 
+    // Generation is free for users — each user supplies their own MuAPI key.
     const cost = this.getCreditCost(modelId, duration, resolution);
-    await UserService.deductCredits(userId, cost);
 
     const apiKey = await resolveApiKey(userId);
     if (!apiKey) throw new Error("No MuAPI key configured. Add your own key in Settings or contact the administrator.");
@@ -98,14 +97,11 @@ export const AIService = {
 
     if (!submitRes.ok) {
       const errorText = await submitRes.text();
-      // Refund credits on failure before throwing
-      await UserService.addCredits(userId, cost);
       throw new Error(`API Submission Failed: ${submitRes.status} ${errorText}`);
     }
 
     const { request_id } = await submitRes.json();
     if (!request_id) {
-      await UserService.addCredits(userId, cost);
       throw new Error("No request_id received from API");
     }
 
@@ -175,8 +171,6 @@ export const AIService = {
           error: errorMsg,
         }
       });
-      // Refund credits on failure
-      await UserService.addCredits(creation.userId, creation.creditCost);
       return { status: "failed", error: updated.error };
     }
 

@@ -5,45 +5,10 @@
 const config = {
   appName: "Ai Kissing Video Generator",
   auth: {
-    // Public base URL of the app (used for Stripe redirect URLs)
+    // Public base URL of the app (used for redirects)
     url: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
     // Public URL Clerk/MuAPI use for async webhooks
     webhook_url: process.env.WEBHOOK_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
-  },
-  stripe: {
-    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-    secretKey: process.env.STRIPE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    plans: {
-      basic: {
-        id: "basic",
-        name: "Basic Kiss Pack",
-        credits: 1000, // $5.00 for 1000 credits
-        price: 500, // $5.00 in cents
-        description: "Get 1,000 Hearts to generate cinematic and fast kiss videos."
-      },
-      standard: {
-        id: "standard",
-        name: "Sweetheart Pack",
-        credits: 2000, // $10.00 for 2000 credits
-        price: 1000, // $10.00 in cents
-        description: "Get 2,000 Hearts to generate cinematic and fast kiss videos."
-      },
-      pro: {
-        id: "pro",
-        name: "Romance Pro Pack",
-        credits: 4000, // $20.00 for 4000 credits
-        price: 2000, // $20.00 in cents
-        description: "Get 4,000 Hearts to generate cinematic and fast kiss videos."
-      },
-      business: {
-        id: "business",
-        name: "Cupid Elite Pack",
-        credits: 10000, // $50.00 for 10000 credits
-        price: 5000, // $50.00 in cents
-        description: "Get 10,000 Hearts to generate cinematic and fast kiss videos."
-      }
-    }
   },
   ai: {
     apiKey: process.env.MU_API_KEY,
