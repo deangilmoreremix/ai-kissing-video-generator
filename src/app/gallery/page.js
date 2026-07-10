@@ -1,23 +1,24 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { FaDownload, FaSpinner, FaTrash, FaVideo, FaHeart, FaPlay } from "react-icons/fa";
 
 export default function GalleryPage() {
-  const { data: session, status } = useSession();
+  const { isLoaded, isSignedIn } = useUser();
+  const { openSignIn } = useClerk();
   const [creations, setCreations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(null);
   const [selectedCreation, setSelectedCreation] = useState(null);
 
   useEffect(() => {
-    if (session?.user) {
+    if (isSignedIn) {
       fetchCreations();
-    } else if (status !== "loading") {
+    } else if (isLoaded) {
       setLoading(false);
     }
-  }, [session, status]);
+  }, [isSignedIn, isLoaded]);
 
   const fetchCreations = async () => {
     try {
@@ -49,7 +50,7 @@ export default function GalleryPage() {
     }
   };
 
-  if (status === "loading" || loading) {
+  if (!isLoaded || loading) {
     return (
       <main className="flex-1 flex flex-col items-center justify-center bg-zinc-950 text-zinc-100">
         <FaSpinner className="animate-spin text-2xl text-rose-500 mb-3" />
@@ -58,7 +59,7 @@ export default function GalleryPage() {
     );
   }
 
-  if (!session) {
+  if (!isSignedIn) {
     return (
       <main className="flex-1 flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 px-6 text-center">
         <div className="h-12 w-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center text-rose-500 mb-4 shadow-lg shadow-rose-500/10">
@@ -69,7 +70,7 @@ export default function GalleryPage() {
           Please sign in to view your personal AI Kissing Video creations gallery.
         </p>
         <button
-          onClick={() => signIn("google")}
+          onClick={() => openSignIn()}
           className="mt-6 px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold text-xs rounded-lg transition-all cursor-pointer shadow-lg shadow-rose-500/20"
         >
           Sign In

@@ -1,6 +1,8 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { ClerkProvider } from "@clerk/nextjs";
+import { UserSync } from "@/components/UserSync";
 import Navbar from "../components/Navbar";
 
 const outfit = Outfit({
@@ -19,15 +21,19 @@ export default function RootLayout({ children }) {
   const theme = config?.theme || "slate-indigo";
 
   return (
-    <html lang="en" className="h-full w-full" data-theme={theme}>
-      <body className={`${outfit.className} h-full w-full flex flex-col antialiased bg-bg-page text-primary-text`}>
-        <Providers>
-          <Navbar />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {children}
-          </div>
-        </Providers>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="h-full w-full" data-theme={theme}>
+        <body className={`${outfit.className} h-full w-full flex flex-col antialiased bg-bg-page text-primary-text`}>
+          <Providers>
+            <UserSync>
+              <Navbar />
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {children}
+              </div>
+            </UserSync>
+          </Providers>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

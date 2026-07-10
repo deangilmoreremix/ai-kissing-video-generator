@@ -5,13 +5,10 @@
 const config = {
   appName: "Ai Kissing Video Generator",
   auth: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    },
-    secret: process.env.NEXTAUTH_SECRET,
-    url: process.env.NEXTAUTH_URL || "http://localhost:3000",
-    webhook_url: process.env.WEBHOOK_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
+    // Public base URL of the app (used for Stripe redirect URLs)
+    url: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
+    // Public URL Clerk/MuAPI use for async webhooks
+    webhook_url: process.env.WEBHOOK_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
   },
   stripe: {
     publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,

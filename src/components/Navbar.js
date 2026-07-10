@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { IoClose, IoMenu } from "react-icons/io5";
-import { FiMoon, FiSun, FiLogOut, FiDollarSign, FiPlus, FiUser } from "react-icons/fi";
+import { FiMoon, FiSun, FiLogOut, FiDollarSign, FiPlus, FiUser, FiSettings } from "react-icons/fi";
 import { SiVercel } from "react-icons/si";
 import config from "@/lib/config";
+import { useAppUser } from "@/components/UserSync";
 
 export default function Navbar() {
-  const { data: session, status } = useSession();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut, openSignIn } = useClerk();
+  const { credits } = useAppUser();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -31,11 +34,13 @@ export default function Navbar() {
         { name: "Workspace", path: `/app/${currentAppId}` },
         { name: "Gallery", path: `/app/${currentAppId}/gallery` },
         { name: "Pricing", path: `/app/${currentAppId}/pricing` },
+        { name: "Settings", path: `/settings` },
       ]
     : [
         { name: "Workspace", path: "/" },
         { name: "Gallery", path: "/gallery" },
         { name: "Pricing", path: "/pricing" },
+        { name: "Settings", path: "/settings" },
       ];
 
   return (
@@ -87,13 +92,13 @@ export default function Navbar() {
             <span>Deploy</span>
           </a>
 
-          {status === "authenticated" ? (
+          {isSignedIn ? (
             <div className="flex items-center">
               {/* Credit Balance indicator */}
               <div className="flex items-center h-9 border border-divider rounded-l bg-bg-page/30 overflow-hidden pr-2">
                 <span className="font-bold text-[13px] px-3 flex items-center text-primary-text gap-1">
                   <FiDollarSign className="text-emerald-500 text-xs" />
-                  {session.user.credits !== undefined ? session.user.credits : 0}
+                  {credits}
                 </span>
                 <Link
                   href="/pricing"
@@ -110,9 +115,9 @@ export default function Navbar() {
                   onBlur={() => setTimeout(() => setIsProfileOpen(false), 200)}
                   className="h-9 w-9 flex items-center justify-center border-y border-r border-divider rounded-r bg-bg-page/30 hover:bg-bg-page transition-colors cursor-pointer"
                 >
-                  {session.user.image ? (
+                  {user?.imageUrl ? (
                     <img
-                      src={session.user.image}
+                      src={user.imageUrl}
                       alt="Profile"
                       className="h-6 w-6 rounded-full object-cover"
                     />
@@ -125,10 +130,18 @@ export default function Navbar() {
                 {isProfileOpen && (
                   <div className="absolute right-0 top-11 w-48 rounded border border-divider bg-bg-card p-1 shadow-lg z-[100] animate-scale-up">
                     <div className="px-3 py-2 text-xs text-secondary-text border-b border-divider/50 mb-1 truncate">
-                      {session.user.email}
+                      {user?.primaryEmailAddress?.emailAddress}
                     </div>
+                    <Link
+                      href="/settings"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm font-semibold text-primary-text hover:bg-bg-page transition-colors"
+                    >
+                      <FiSettings size={14} />
+                      <span>Settings</span>
+                    </Link>
                     <button
-                      onClick={() => signOut({ callbackUrl: "/login" })}
+                      onClick={() => signOut({ redirectUrl: "/" })}
                       className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
                     >
                       <FiLogOut size={14} />
@@ -139,21 +152,21 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            <Link
-              href="/login"
+            <button
+              onClick={() => openSignIn()}
               className="bg-primary text-white px-5 py-1.5 rounded-full text-sm font-bold hover:bg-primary-hover transition-all shadow-md shadow-primary/20"
             >
               Sign In
-            </Link>
+            </button>
           )}
         </div>
 
         {/* Mobile Navbar Hamburger Menu Controls */}
         <div className="flex md:hidden items-center gap-2">
-          {status === "authenticated" && (
+          {isSignedIn && (
             <div className="flex items-center h-8 border border-divider rounded bg-bg-page/30 px-2.5 text-xs font-bold text-primary-text gap-0.5">
               <FiDollarSign className="text-emerald-500 text-[10px]" />
-              {session.user.credits !== undefined ? session.user.credits : 0}
+              {credits}
             </div>
           )}
           
@@ -198,11 +211,11 @@ export default function Navbar() {
               <span>Clone & Deploy Template</span>
             </a>
 
-            {status === "authenticated" ? (
+            {isSignedIn ? (
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  signOut({ callbackUrl: "/login" });
+                  signOut({ redirectUrl: "/" });
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded bg-red-500/10 text-red-500 py-3 text-sm font-bold hover:bg-red-500/20 transition-all border border-red-500/20 mt-2"
               >
@@ -210,13 +223,15 @@ export default function Navbar() {
                 <span>Sign Out</span>
               </button>
             ) : (
-              <Link
-                href="/login"
-                onClick={() => setIsOpen(false)}
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  openSignIn();
+                }}
                 className="flex w-full items-center justify-center rounded bg-primary text-white py-3 text-sm font-bold hover:bg-primary-hover transition-all shadow-md shadow-primary/20 mt-2"
               >
                 Sign In
-              </Link>
+              </button>
             )}
           </nav>
         </div>

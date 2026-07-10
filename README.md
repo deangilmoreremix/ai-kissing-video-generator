@@ -66,9 +66,10 @@ AI Kissing Video Generator is a production-ready, highly-optimized AI web applic
   - **Cupid Elite Pack** ($50 / 10,000 Hearts) — Up to 20 Veo 3.1, 76 Wan 2.7, or 33 Gemini Omni generations.
 - Credit balance is automatically topped up via Stripe webhook on checkout completion.
 
-### 🔐 Google Auth + Credit Persistence
-- NextAuth Google provider with Prisma adapter — user sessions, credit balances, and galleries are all persisted per account.
-- Credits displayed live in the Navbar with an animated heart pulse badge.
+### 🔐 Clerk Auth + Per-User API Keys + Credit Persistence
+- Authentication is handled by [Clerk](https://clerk.com) (`@clerk/nextjs`) via `clerkMiddleware` and `<ClerkProvider>`. Each Clerk identity is linked to a Prisma `User` record (by `clerkId`), so credit balances and galleries persist per account.
+- Users can add their **own MuAPI key** in **Settings (`/settings`)** so generations run under their account; otherwise the shared `MU_API_KEY` is used as a fallback.
+- Credits and the saved API-key status are displayed live in the Navbar.
 
 ---
 
@@ -86,17 +87,17 @@ To successfully deploy and run, you must populate the following environment vari
 
 | Service | Variable | Description & Source |
 | :--- | :--- | :--- |
-| **Database** | `DATABASE_URL` | PostgreSQL connection string ([Supabase](https://supabase.com) or [Neon](https://neon.tech)) |
-| | `DIRECT_URL` | Non-pooling direct PostgreSQL URL (for migrations) |
-| **NextAuth / Google** | `NEXTAUTH_SECRET` | Secure random string generated via `openssl rand -base64 32` |
-| | `NEXTAUTH_URL` | Your production domain (e.g. `https://my-app.vercel.app`) |
-| | `WEBHOOK_URL` | Public URL for MuAPI async callbacks (same as `NEXTAUTH_URL` in production) |
-| | `GOOGLE_CLIENT_ID` | Get from [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
-| | `GOOGLE_CLIENT_SECRET` | Get from [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
+| **Database (Supabase)** | `DATABASE_URL` | Supabase Postgres connection string (pooled) |
+| | `DIRECT_URL` | Supabase direct (non-pooling) PostgreSQL URL for migrations |
+| **App URL** | `NEXT_PUBLIC_APP_URL` | Public base URL of the app (Stripe redirects, webhooks) |
+| | `WEBHOOK_URL` | Public URL for MuAPI async callbacks (defaults to `NEXT_PUBLIC_APP_URL`) |
+| **Clerk Auth** | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Get from [Clerk Dashboard](https://dashboard.clerk.com) |
+| | `CLERK_SECRET_KEY` | Get from [Clerk Dashboard](https://dashboard.clerk.com) |
+| | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Path to the sign-in page (e.g. `/login`) |
 | **Stripe Billing** | `STRIPE_SECRET_KEY` | Get from [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
 | | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Get from [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
 | | `STRIPE_WEBHOOK_SECRET` | Webhook secret for resolving credit purchases |
-| **AI Generation** | `MU_API_KEY` | Create an account and get key from [muapi.ai/access-keys](https://muapi.ai/access-keys?utm_source=github&utm_medium=readme&utm_campaign=ai-kissing-video-generator) |
+| **AI Generation** | `MU_API_KEY` | Server-wide fallback MuAPI key from [muapi.ai/access-keys](https://muapi.ai/access-keys?utm_source=github&utm_medium=readme&utm_campaign=ai-kissing-video-generator). Users can also supply their own key in Settings. |
 
 ### 🚀 Launching on Vercel: Step-by-Step
 

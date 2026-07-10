@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import config from "@/lib/config";
+import { getCurrentUser } from "@/lib/auth";
+import { config } from "@/lib/config";
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getCurrentUser();
 
-    if (!session?.user) {
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -18,9 +17,11 @@ export async function POST(req) {
       return new NextResponse("No file provided", { status: 400 });
     }
 
-    const apiKey = config.ai.apiKey;
+    // Prefer the user's own MuAPI key, falling back to the shared server key
+    const apiKey = user.muApiKey || config.ai.apiKey;
+
     if (!apiKey) {
-      return new NextResponse("API Key not configured", { status: 500 });
+      return new NextResponse("No MuAPI key configured. Add your own key in Settings or contact the administrator.", { status: 500 });
     }
 
     console.log(`[UPLOAD_API] File details: name=${file.name}, size=${file.size}, type=${file.type}`);

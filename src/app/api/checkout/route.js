@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { BillingService } from "@/lib/services/billing";
 
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized. Please sign in." }, { status: 401 });
     }
 
@@ -15,7 +14,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing planId parameter" }, { status: 400 });
     }
 
-    const checkoutUrl = await BillingService.createCheckoutSession(session.user.id, planId);
+    const checkoutUrl = await BillingService.createCheckoutSession(user.id, planId);
     return NextResponse.json({ url: checkoutUrl });
   } catch (error) {
     console.error("Checkout route error:", error);

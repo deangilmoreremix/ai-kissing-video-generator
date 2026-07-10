@@ -4,6 +4,26 @@ import config from "@/lib/config";
 import { calculateCreditCost } from "@/lib/utils/pricing";
 
 /**
+ * Resolve the MuAPI key to use for a request.
+ * Prefers the per-user key stored in their account settings, falling back to
+ * the shared server-side MU_API_KEY if the user hasn't configured their own.
+ */
+async function resolveApiKey(userId) {
+  if (userId) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { muApiKey: true },
+      });
+      if (user?.muApiKey) return user.muApiKey;
+    } catch (e) {
+      console.error("Failed to resolve user API key, falling back to server key:", e);
+    }
+  }
+  return config.ai.apiKey;
+}
+
+/**
  * Service to manage Kissing Video generations using various image-to-video models.
  */
 export const AIService = {
@@ -31,8 +51,8 @@ export const AIService = {
     const cost = this.getCreditCost(modelId, duration, resolution);
     await UserService.deductCredits(userId, cost);
 
-    const apiKey = config.ai.apiKey;
-    if (!apiKey) throw new Error("MUAPIAPP_API_KEY is not configured");
+    const apiKey = await resolveApiKey(userId);
+    if (!apiKey) throw new Error("No MuAPI key configured. Add your own key in Settings or contact the administrator.");
 
     // Build request payload dynamically based on model schemas
     const bodyPayload = {
@@ -172,8 +192,8 @@ export const AIService = {
     if (res && res.status !== "processing") return res;
 
     // Fallback: poll MuAPI prediction result endpoint
-    const apiKey = config.ai.apiKey;
-    if (!apiKey) throw new Error("API Key is not configured");
+    const apiKey = await resolveApiKey(userId);
+    if (!apiKey) throw new Error("No MuAPI key configured. Add your own key in Settings or contact the administrator.");
 
     try {
       const res = await fetch(config.ai.pollEndpoint(requestId), {
