@@ -2,17 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useState } from "react";
-import { LoginButton, SignUpButton, SignOutButton } from "./AuthButtons";
+import { useUser } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
+import { LoginButton, SignUpButton } from "./AuthButtons";
+import { UserButton } from "@clerk/nextjs";
 import { CreditBadge } from "./CreditBadge";
 import { FaHeart, FaBars, FaTimes } from "react-icons/fa";
 import { SiVercel } from "react-icons/si";
 
 export function Navbar() {
-  const { data: session, status } = useSession();
+  const { isSignedIn, isLoaded, user } = useUser();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [credits, setCredits] = useState(0);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      fetch("/api/me")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setCredits(data.credits ?? 0);
+        })
+        .catch(() => {});
+    }
+  }, [isSignedIn]);
 
   return (
     <header className="w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md text-zinc-100 sticky top-0 z-[100]">
@@ -62,31 +75,25 @@ export function Navbar() {
 
         {/* Auth / Account Controls */}
         <div className="flex items-center gap-2.5 sm:gap-3">
-          {session?.user && <CreditBadge credits={session.user.credits ?? 0} />}
+          {isSignedIn && <CreditBadge credits={credits} />}
 
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center gap-3">
-            {status === "loading" ? (
+            {!isLoaded ? (
               <div className="h-7 w-20 animate-pulse bg-zinc-800 rounded-sm" />
-            ) : session?.user ? (
+            ) : isSignedIn ? (
               <div className="flex items-center gap-3">
                 <Link href="/pricing" className="inline-flex items-center px-3.5 py-1.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white rounded-lg text-xs font-semibold transition-all shadow-lg shadow-rose-500/10">
                   Buy Hearts
                 </Link>
 
-                {session.user.image ? (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name || "User Profile"}
-                    className="h-6 w-6 rounded-full border border-rose-500/20"
-                  />
-                ) : (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-zinc-300 text-xs font-semibold">
-                    {session.user.name ? session.user.name[0].toUpperCase() : "U"}
-                  </div>
-                )}
-
-                <SignOutButton />
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-6 w-6 rounded-full border border-rose-500/20",
+                    },
+                  }}
+                />
               </div>
             ) : (
               <div className="flex items-center gap-2.5">
@@ -96,7 +103,7 @@ export function Navbar() {
             )}
 
             {/* Deploy Button */}
-            <a 
+            <a
               href="https://vercel.com/new/clone?repository-url=https://github.com/SamurAIGPT/ai-kissing-video-generator"
               target="_blank"
               rel="noopener noreferrer"
@@ -147,9 +154,9 @@ export function Navbar() {
           </div>
 
           <div className="pt-4 border-t border-zinc-800/80 flex flex-col gap-3">
-            {status === "loading" ? (
+            {!isLoaded ? (
               <div className="h-8 w-full animate-pulse bg-zinc-800 rounded-sm" />
-            ) : session?.user ? (
+            ) : isSignedIn ? (
               <div className="flex flex-col gap-3">
                 <Link
                   href="/pricing"
@@ -159,21 +166,27 @@ export function Navbar() {
                   Buy Hearts
                 </Link>
                 <div className="flex items-center gap-2.5 py-1">
-                  {session.user.image ? (
+                  {user?.imageUrl ? (
                     <img
-                      src={session.user.image}
-                      alt={session.user.name || "User Profile"}
+                      src={user.imageUrl}
+                      alt={user.fullName || "User Profile"}
                       className="h-6 w-6 rounded-full border border-rose-500/20"
                     />
                   ) : (
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-zinc-300 text-xs font-semibold">
-                      {session.user.name ? session.user.name[0].toUpperCase() : "U"}
+                      {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
                     </div>
                   )}
-                  <span className="text-xs text-zinc-300 truncate">{session.user.name || session.user.email}</span>
+                  <span className="text-xs text-zinc-300 truncate">{user?.fullName || user?.primaryEmailAddress?.emailAddress}</span>
                 </div>
-                <div className="border-t border-zinc-900/50 pt-2">
-                  <SignOutButton />
+                <div className="border-t border-zinc-900/50 pt-2 flex justify-center">
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: "h-8 w-8 rounded-full border border-rose-500/20",
+                      },
+                    }}
+                  />
                 </div>
               </div>
             ) : (
@@ -184,7 +197,7 @@ export function Navbar() {
             )}
 
             {/* Mobile Deploy Button */}
-            <a 
+            <a
               href="https://vercel.com/new/clone?repository-url=https://github.com/SamurAIGPT/ai-kissing-video-generator"
               target="_blank"
               rel="noopener noreferrer"

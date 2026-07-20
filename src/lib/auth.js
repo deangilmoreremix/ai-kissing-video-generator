@@ -1,26 +1,36 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import GoogleProvider from "next-auth/providers/google";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "./prisma";
 
-export const authOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-  ],
-  callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-        session.user.credits = user.credits;
-      }
-      return session;
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: "/login",
-  },
-};
+/**
+ * Resolves the local application User row for the currently signed-in Clerk
+ * user. If no local row exists yet, one is created (upsert) so credits can be
+ * tracked. Returns null when there is no authenticated user.
+ */
+export async function getCurrentUser() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return null;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (user) {
+    return user;
+  }
+
+  return await prisma.user.create({
+    data: { clerkUserId: userId },
+  });
+}
+
+/**
+ * Returns the Clerk userId or null. Use this in API routes that only need to
+ * know whether a request is authenticated.
+ */
+export async function getClerkUserId() {
+  const { userId } = await auth();
+  return userId ?? null;
+}

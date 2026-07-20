@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AIService } from "@/lib/services/ai";
 
 // GET user creations history or check status of a specific request
 export async function GET(req) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getCurrentUser();
 
-    if (!session?.user) {
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
+
+    const sessionUser = { id: user.id };
 
     const { searchParams } = new URL(req.url);
     const requestId = searchParams.get("requestId");
@@ -19,14 +20,14 @@ export async function GET(req) {
     // If requestId is passed, perform status check/polling fallback
     if (requestId) {
       console.log(`[CREATIONS_API_GET] Checking status for requestId: ${requestId}`);
-      const statusData = await AIService.checkStatus(requestId, session.user.id);
+      const statusData = await AIService.checkStatus(requestId, sessionUser.id);
       console.log(`[CREATIONS_API_GET] Status result for ${requestId}:`, statusData);
       return NextResponse.json(statusData);
     }
 
     // Otherwise, fetch all user kissing video creations
     const creations = await prisma.kissingVideoCreation.findMany({
-      where: { userId: session.user.id },
+      where: { userId: sessionUser.id },
       orderBy: { createdAt: "desc" }
     });
 
@@ -35,7 +36,7 @@ export async function GET(req) {
       creations.map(async (c) => {
         if (c.status === "processing" && c.requestId) {
           try {
-            await AIService.checkStatus(c.requestId, session.user.id);
+            await AIService.checkStatus(c.requestId, sessionUser.id);
             const refetched = await prisma.kissingVideoCreation.findUnique({
               where: { id: c.id }
             });
@@ -59,15 +60,15 @@ export async function GET(req) {
 // POST new kissing video creation task
 export async function POST(req) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getCurrentUser();
 
-    if (!session?.user) {
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Check credits
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
       select: { credits: true }
     });
 
@@ -84,11 +85,11 @@ export async function POST(req) {
     }
 
     const cost = AIService.getCreditCost(modelId, duration, resolution);
-    if (!user || user.credits < cost) {
-      return new NextResponse(`Insufficient credits. Required: ${cost}, balance: ${user?.credits ?? 0}`, { status: 400 });
+    if (!dbUser || dbUser.credits < cost) {
+      return new NextResponse(`Insufficient credits. Required: ${cost}, balance: ${dbUser?.credits ?? 0}`, { status: 400 });
     }
 
-    const creation = await AIService.generate(session.user.id, {
+    const creation = await AIService.generate(user.id, {
       maleImage,
       femaleImage,
       stitchedImage,

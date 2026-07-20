@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect, useRef } from "react";
 import { calculateCreditCost } from "@/lib/utils/pricing";
 import {
@@ -85,11 +85,8 @@ function ImageUploadZone({
 }
 
 export default function WorkspacePage() {
-  const {
-    data: session,
-    status: authStatus,
-    update: updateSession,
-  } = useSession();
+  const { isSignedIn, isLoaded, user } = useUser();
+  const { openSignIn } = useClerk();
 
   // File uploading states
   const [maleFile, setMaleFile] = useState(null);
@@ -236,13 +233,13 @@ export default function WorkspacePage() {
   };
 
   useEffect(() => {
-    if (session) {
+    if (isSignedIn) {
       fetchHistory();
-    } else if (authStatus !== "loading") {
+    } else if (isLoaded) {
       setLoadingHistory(false);
     }
     return () => stopPolling();
-  }, [session, authStatus]);
+  }, [isSignedIn, isLoaded]);
 
   // Click outside dropdowns to close them
   useEffect(() => {
@@ -444,7 +441,7 @@ export default function WorkspacePage() {
             fetchHistory(); // Refresh history list
 
             // Re-fetch session to sync user credit hearts
-            if (updateSession) updateSession();
+            fetch("/api/me").catch(() => {});
 
             if (result.status === "completed") {
               // Load completed video in preview
@@ -475,8 +472,8 @@ export default function WorkspacePage() {
 
   // Submit Generation
   const handleGenerate = async () => {
-    if (!session) {
-      signIn("google");
+    if (!isSignedIn) {
+      openSignIn();
       return;
     }
 
@@ -1075,7 +1072,7 @@ export default function WorkspacePage() {
                   time.
                 </p>
               </div>
-              {session?.user && history.length > 0 && (
+              {isSignedIn && history.length > 0 && (
                 <button
                   onClick={() => setActiveCreation(history[0])}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 rounded text-xs font-semibold transition-colors cursor-pointer"
@@ -1098,17 +1095,17 @@ export default function WorkspacePage() {
             <div className="flex-1 flex items-center justify-center">
               <FaSpinner className="animate-spin text-rose-500 text-sm" />
             </div>
-          ) : !session ? (
+          ) : !isSignedIn ? (
             <div className="flex-1 flex flex-col items-center justify-center p-4 border border-zinc-800/60 rounded bg-zinc-900/10 text-center">
               <p className="text-xs text-zinc-400">
                 Sign in to securely view and save your historical feed
                 creations.
               </p>
               <button
-                onClick={() => signIn("google")}
+                onClick={() => openSignIn()}
                 className="mt-3.5 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded text-xs font-bold cursor-pointer"
               >
-                Sign In With Google
+                Sign In
               </button>
             </div>
           ) : history.length === 0 ? (
